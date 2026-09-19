@@ -1,20 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import type { Folder, Text } from "@/lib/types"
 import { loadTexts, saveTexts, loadFolders, saveFolders } from "@/lib/storage"
-import { splitSentences, buildChunks, makeTitle } from "@/lib/textProcessing"
+import { splitSentences, buildChunks, makeTitle, calcProgress } from "@/lib/textProcessing"
 import { MenuDrawer, type ViewFilter } from "./menu-drawer"
 
 const SAMPLE_TITLE = "自己紹介サンプル"
 const SAMPLE_BODY =
   "はじめまして。本日はお時間をいただきありがとうございます。私はこれまで営業として三年間働いてまいりました。お客様の課題を丁寧にヒアリングし、最適な提案を行うことを大切にしています。今後は御社でその経験を活かしたいと考えております。"
-
-export function calcProgress(text: Text): number {
-  if (text.chunks.length === 0) return 0
-  const mastered = text.chunks.filter((c) => c.status === "mastered").length
-  return Math.round((mastered / text.chunks.length) * 100)
-}
 
 export function HomeScreen() {
   const [listOpen, setListOpen] = useState(false)
@@ -22,6 +17,8 @@ export function HomeScreen() {
   const [folders, setFolders] = useState<Folder[]>([])
   const [title, setTitle] = useState("")
   const [folderId, setFolderId] = useState<string>("")
+  const [creatingFolder, setCreatingFolder] = useState(false)
+  const [newFolderName, setNewFolderName] = useState("")
   const [body, setBody] = useState("")
   const [sentencesPerBlock, setSentencesPerBlock] = useState(2)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -72,6 +69,26 @@ export function HomeScreen() {
   const handleFoldersChange = (next: Folder[]) => {
     setFolders(next)
     saveFolders(next)
+  }
+
+  const startCreatingFolder = () => {
+    setCreatingFolder(true)
+    setNewFolderName("")
+  }
+
+  const cancelCreatingFolder = () => {
+    setCreatingFolder(false)
+    setNewFolderName("")
+  }
+
+  const confirmCreateFolder = () => {
+    const name = newFolderName.trim()
+    if (!name) return
+    const newFolder: Folder = { id: `folder-${Date.now()}`, name }
+    handleFoldersChange([...folders, newFolder])
+    setFolderId(newFolder.id)
+    setCreatingFolder(false)
+    setNewFolderName("")
   }
 
   const currentViewLabel =
@@ -146,8 +163,8 @@ export function HomeScreen() {
                 )}
                 {sortedTexts.map((item) => (
                   <li key={item.id}>
-                    <button
-                      type="button"
+                    <Link
+                      href={`/practice/${item.id}`}
                       className="flex w-full items-center gap-3 px-4 py-3 pl-11 text-left transition-colors hover:bg-[#e7edf7]/60"
                     >
                       <BookmarkStar filled={item.bookmarked} />
@@ -155,7 +172,7 @@ export function HomeScreen() {
                       <span className="text-sm font-semibold tabular-nums text-[#3a5a9c]">
                         {calcProgress(item)}%
                       </span>
-                    </button>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -179,22 +196,65 @@ export function HomeScreen() {
               </Field>
 
               <Field label="フォルダ" htmlFor="folder">
-                <div className="relative">
-                  <select
-                    id="folder"
-                    value={folderId}
-                    onChange={(e) => setFolderId(e.target.value)}
-                    className="w-full cursor-pointer appearance-none rounded-lg border border-[#3a5a9c]/30 bg-[#e7edf7]/30 px-3 py-2 pr-9 text-[#1f2f52] outline-none transition-colors focus-visible:border-[#3a5a9c] focus-visible:ring-2 focus-visible:ring-[#3a5a9c]/30"
-                  >
-                    <option value="">未分類</option>
-                    {folders.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#3a5a9c]" />
-                </div>
+                {creatingFolder ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.nativeEvent.isComposing) return
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          confirmCreateFolder()
+                        }
+                        if (e.key === "Escape") cancelCreatingFolder()
+                      }}
+                      placeholder="新しいフォルダ名"
+                      className="w-full rounded-lg border border-[#3a5a9c]/30 bg-white px-3 py-2 text-[#1f2f52] outline-none transition-colors focus-visible:border-[#3a5a9c] focus-visible:ring-2 focus-visible:ring-[#3a5a9c]/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={confirmCreateFolder}
+                      disabled={!newFolderName.trim()}
+                      className="shrink-0 rounded-lg bg-[#1f2f52] px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      作成
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelCreatingFolder}
+                      className="shrink-0 rounded-lg border border-[#3a5a9c]/40 px-3 py-2 text-sm font-semibold text-[#3a5a9c]"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <select
+                      id="folder"
+                      value={folderId}
+                      onChange={(e) => {
+                        if (e.target.value === "__new__") {
+                          startCreatingFolder()
+                          return
+                        }
+                        setFolderId(e.target.value)
+                      }}
+                      className="w-full cursor-pointer appearance-none rounded-lg border border-[#3a5a9c]/30 bg-[#e7edf7]/30 px-3 py-2 pr-9 text-[#1f2f52] outline-none transition-colors focus-visible:border-[#3a5a9c] focus-visible:ring-2 focus-visible:ring-[#3a5a9c]/30"
+                    >
+                      <option value="">未分類</option>
+                      {folders.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name}
+                        </option>
+                      ))}
+                      <option value="__new__">＋ 新しいフォルダを作る</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#3a5a9c]" />
+                  </div>
+                )}
               </Field>
 
               <Field label="本文" htmlFor="body">

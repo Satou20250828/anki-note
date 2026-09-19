@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { HomeScreen, calcProgress } from "./home-screen";
+import { HomeScreen } from "./home-screen";
+import { calcProgress } from "@/lib/textProcessing";
 import { loadTexts, loadFolders, saveTexts, saveFolders } from "@/lib/storage";
 import type { Text } from "@/lib/types";
 
@@ -102,6 +103,29 @@ describe("HomeScreen", () => {
     fireEvent.click(screen.getByText("新しいフォルダを作る"));
 
     expect(loadFolders()).toHaveLength(1);
+    expect(screen.getByLabelText("フォルダ")).toBeInTheDocument();
+  });
+
+  it("新しいテキストを追加フォームからも新規フォルダを作成できる", () => {
+    render(<HomeScreen />);
+
+    fireEvent.change(screen.getByLabelText("フォルダ"), { target: { value: "__new__" } });
+    const input = screen.getByPlaceholderText("新しいフォルダ名");
+    fireEvent.change(input, { target: { value: "面接用" } });
+    fireEvent.click(screen.getByText("作成"));
+
+    expect(loadFolders()).toEqual([{ id: expect.any(String), name: "面接用" }]);
+    expect(screen.getByLabelText("フォルダ")).toHaveValue(loadFolders()[0].id);
+    expect(screen.getByText("面接用", { selector: "option" })).toBeInTheDocument();
+  });
+
+  it("フォルダ作成をキャンセルすると選択欄に戻る", () => {
+    render(<HomeScreen />);
+
+    fireEvent.change(screen.getByLabelText("フォルダ"), { target: { value: "__new__" } });
+    fireEvent.click(screen.getByText("キャンセル"));
+
+    expect(loadFolders()).toEqual([]);
     expect(screen.getByLabelText("フォルダ")).toBeInTheDocument();
   });
 });
