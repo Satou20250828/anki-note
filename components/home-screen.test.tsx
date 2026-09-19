@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { HomeScreen, calcProgress } from "./home-screen";
-import { loadTexts } from "@/lib/storage";
+import { loadTexts, loadFolders, saveTexts, saveFolders } from "@/lib/storage";
 import type { Text } from "@/lib/types";
 
 beforeEach(() => {
@@ -49,6 +49,60 @@ describe("HomeScreen", () => {
     expect(saved[0].chunks.length).toBeGreaterThan(0);
 
     expect(screen.getByText("面接原稿")).toBeInTheDocument();
+  });
+
+  it("ハンバーガーボタンでメニューを開くとフォルダ一覧が見える", () => {
+    saveFolders([{ id: "f1", name: "面接用" }]);
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByLabelText("メニューを開く"));
+    expect(screen.getByText("表示フィルタ")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "面接用" })).toBeInTheDocument();
+  });
+
+  it("メニューでフォルダを選ぶと表示中ラベルとテキスト一覧が絞り込まれる", () => {
+    saveFolders([{ id: "f1", name: "面接用" }]);
+    saveTexts([
+      {
+        id: "t1",
+        title: "面接原稿",
+        rawText: "一文目。",
+        folderId: "f1",
+        bookmarked: false,
+        chunkSize: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        id: "t2",
+        title: "スピーチ原稿",
+        rawText: "一文目。",
+        folderId: null,
+        bookmarked: false,
+        chunkSize: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        createdAt: 2,
+        updatedAt: 2,
+      },
+    ]);
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByLabelText("メニューを開く"));
+    fireEvent.click(screen.getByRole("radio", { name: "面接用" }));
+
+    expect(screen.getByText("表示中：").nextSibling).toHaveTextContent("面接用");
+
+    fireEvent.click(screen.getByText(/保存済みテキスト/));
+    expect(screen.getByText("面接原稿")).toBeInTheDocument();
+    expect(screen.queryByText("スピーチ原稿")).not.toBeInTheDocument();
+  });
+
+  it("新しいフォルダを作るとlocalStorageに保存され、登録フォームの選択肢にも現れる", () => {
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByLabelText("メニューを開く"));
+    fireEvent.click(screen.getByText("新しいフォルダを作る"));
+
+    expect(loadFolders()).toHaveLength(1);
+    expect(screen.getByLabelText("フォルダ")).toBeInTheDocument();
   });
 });
 

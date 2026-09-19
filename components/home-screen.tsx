@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import type { Folder, Text } from "@/lib/types"
-import { loadTexts, saveTexts, loadFolders } from "@/lib/storage"
+import { loadTexts, saveTexts, loadFolders, saveFolders } from "@/lib/storage"
 import { splitSentences, buildChunks, makeTitle } from "@/lib/textProcessing"
+import { MenuDrawer, type ViewFilter } from "./menu-drawer"
 
 const SAMPLE_TITLE = "自己紹介サンプル"
 const SAMPLE_BODY =
@@ -23,6 +24,9 @@ export function HomeScreen() {
   const [folderId, setFolderId] = useState<string>("")
   const [body, setBody] = useState("")
   const [sentencesPerBlock, setSentencesPerBlock] = useState(2)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [viewFilter, setViewFilter] = useState<ViewFilter>("all")
+  const [viewFolderId, setViewFolderId] = useState<string | null>(null)
 
   useEffect(() => {
     // localStorageはサーバーサイドでは参照できないため、マウント後に読み込む
@@ -65,7 +69,25 @@ export function HomeScreen() {
     setListOpen(true)
   }
 
-  const sortedTexts = [...texts].sort((a, b) => b.updatedAt - a.updatedAt)
+  const handleFoldersChange = (next: Folder[]) => {
+    setFolders(next)
+    saveFolders(next)
+  }
+
+  const currentViewLabel =
+    viewFilter === "all"
+      ? "すべて"
+      : viewFilter === "bookmark"
+        ? "ブックマークのみ"
+        : (folders.find((f) => f.id === viewFolderId)?.name ?? "未分類")
+
+  const visibleTexts = texts.filter((t) => {
+    if (viewFilter === "bookmark") return t.bookmarked
+    if (viewFilter === "folder") return t.folderId === viewFolderId
+    return true
+  })
+
+  const sortedTexts = [...visibleTexts].sort((a, b) => b.updatedAt - a.updatedAt)
 
   return (
     <div className="min-h-screen bg-[#e7edf7] text-[#1f2f52]">
@@ -77,28 +99,22 @@ export function HomeScreen() {
             <button
               type="button"
               aria-label="メニューを開く"
+              onClick={() => setMenuOpen(true)}
               className="flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-white/10"
             >
               <MenuIcon />
             </button>
           </div>
           <div className="px-4 pb-3">
-            <label className="inline-flex items-center gap-1 text-sm text-white/80">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="inline-flex items-center gap-1 rounded-md px-1 py-1 text-sm text-white/80 transition-colors hover:bg-white/10"
+            >
               <span>表示中：</span>
-              <span className="relative">
-                <select
-                  className="cursor-pointer appearance-none rounded-md bg-white/10 py-1 pl-2 pr-6 text-sm font-medium text-white outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                  defaultValue="すべて"
-                  aria-label="表示するフォルダ"
-                >
-                  <option>すべて</option>
-                  {folders.map((f) => (
-                    <option key={f.id}>{f.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-white/80" />
-              </span>
-            </label>
+              <span className="font-medium text-white">{currentViewLabel}</span>
+              <ChevronDown className="text-white/80" />
+            </button>
           </div>
         </div>
       </header>
@@ -230,6 +246,21 @@ export function HomeScreen() {
           </section>
         </main>
       </div>
+
+      <MenuDrawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        filter={viewFilter}
+        onSelectAll={() => setViewFilter("all")}
+        onSelectBookmark={() => setViewFilter("bookmark")}
+        folders={folders}
+        selectedFolderId={viewFolderId}
+        onSelectFolder={(id) => {
+          setViewFilter("folder")
+          setViewFolderId(id)
+        }}
+        onFoldersChange={handleFoldersChange}
+      />
     </div>
   )
 }
