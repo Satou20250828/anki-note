@@ -17,6 +17,21 @@ describe("splitSentences", () => {
     expect(splitSentences("")).toEqual([]);
     expect(splitSentences("   ")).toEqual([]);
   });
+
+  it("句読点がなくても改行を文の区切りとして扱う", () => {
+    const result = splitSentences("今日は天気がいい\n公園に散歩に行った\nとても気持ちよかった");
+    expect(result).toEqual(["今日は天気がいい", "公園に散歩に行った", "とても気持ちよかった"]);
+  });
+
+  it("改行と句読点が混在していても正しく分割する", () => {
+    const result = splitSentences("一行目です。二行目も一文です。\n三行目\n四行目です。五行目です。");
+    expect(result).toEqual(["一行目です。", "二行目も一文です。", "三行目", "四行目です。", "五行目です。"]);
+  });
+
+  it("空行は無視する", () => {
+    const result = splitSentences("一行目\n\n\n二行目");
+    expect(result).toEqual(["一行目", "二行目"]);
+  });
 });
 
 describe("buildChunks", () => {

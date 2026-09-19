@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import type { Folder, Text } from "@/lib/types"
 import { loadTexts, saveTexts, loadFolders, saveFolders } from "@/lib/storage"
@@ -13,6 +14,7 @@ const SAMPLE_BODY =
   "はじめまして。本日はお時間をいただきありがとうございます。私はこれまで営業として三年間働いてまいりました。お客様の課題を丁寧にヒアリングし、最適な提案を行うことを大切にしています。今後は御社でその経験を活かしたいと考えております。"
 
 export function HomeScreen() {
+  const router = useRouter()
   const [listOpen, setListOpen] = useState(false)
   const [texts, setTexts] = useState<Text[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
@@ -65,7 +67,8 @@ export function HomeScreen() {
     setTitle("")
     setBody("")
     setFolderId("")
-    setListOpen(true)
+    setSentencesPerBlock(2)
+    router.push(`/practice/${newText.id}`)
   }
 
   const handleFoldersChange = (next: Folder[]) => {

@@ -3,8 +3,20 @@ import type { Chunk, Sentence, Text } from "./types";
 export function splitSentences(text: string): string[] {
   const trimmed = (text || "").trim();
   if (!trimmed) return [];
-  const parts = trimmed.split(/(?<=[。！？])\s*/);
-  return parts.map((s) => s.trim()).filter(Boolean);
+
+  // 改行も文の区切りとして扱う（句読点を付けずに1行1文で入力するケースに対応するため）
+  const lines = trimmed.split(/\r?\n/);
+  const sentences: string[] = [];
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+    const parts = trimmedLine.split(/(?<=[。！？])\s*/);
+    for (const part of parts) {
+      const sentence = part.trim();
+      if (sentence) sentences.push(sentence);
+    }
+  }
+  return sentences;
 }
 
 export function buildChunks(sentences: string[], size: number): Chunk[] {

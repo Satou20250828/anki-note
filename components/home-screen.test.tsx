@@ -1,12 +1,25 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { HomeScreen } from "./home-screen";
 import { calcProgress } from "@/lib/textProcessing";
 import { loadTexts, loadFolders, saveTexts, saveFolders } from "@/lib/storage";
 import type { Text } from "@/lib/types";
 
+const pushMock = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: pushMock,
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 beforeEach(() => {
   localStorage.clear();
+  pushMock.mockClear();
 });
 
 describe("HomeScreen", () => {
@@ -49,7 +62,21 @@ describe("HomeScreen", () => {
     expect(saved[0].title).toBe("面接原稿");
     expect(saved[0].chunks.length).toBeGreaterThan(0);
 
-    expect(screen.getByText("面接原稿")).toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith(`/practice/${saved[0].id}`);
+  });
+
+  it("テキスト登録後は1ブロックの文数が2にリセットされる", () => {
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByLabelText("文数を増やす"));
+    fireEvent.click(screen.getByLabelText("文数を増やす"));
+    expect(screen.getByText("4")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("本文"), {
+      target: { value: "一文目です。二文目です。" },
+    });
+    fireEvent.click(screen.getByText("分割してはじめる"));
+
+    expect(screen.getByText("2")).toBeInTheDocument();
   });
 
   it("ハンバーガーボタンでメニューを開くとフォルダ一覧が見える", () => {
