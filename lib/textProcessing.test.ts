@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { splitSentences, buildChunks, makeTitle } from "./textProcessing";
+import { splitSentences, buildChunks, makeTitle, calcProgress, extractKeywordSegments } from "./textProcessing";
+import type { Text } from "./types";
 
 describe("splitSentences", () => {
   it("句点・感嘆符・疑問符で文を分割する", () => {
@@ -57,5 +58,56 @@ describe("makeTitle", () => {
 
   it("空文字の場合は無題のテキストを返す", () => {
     expect(makeTitle("")).toBe("無題のテキスト");
+  });
+});
+
+describe("calcProgress", () => {
+  const base: Text = {
+    id: "t1",
+    title: "テスト",
+    rawText: "",
+    folderId: null,
+    bookmarked: false,
+    chunkSize: 1,
+    chunks: [],
+    createdAt: 0,
+    updatedAt: 0,
+  };
+
+  it("チャンクがない場合は0を返す", () => {
+    expect(calcProgress(base)).toBe(0);
+  });
+
+  it("習得済みチャンクの割合を百分率で返す", () => {
+    const text: Text = {
+      ...base,
+      chunks: [
+        { sentences: [], status: "mastered" },
+        { sentences: [], status: "learning" },
+        { sentences: [], status: "new" },
+        { sentences: [], status: "mastered" },
+      ],
+    };
+    expect(calcProgress(text)).toBe(50);
+  });
+});
+
+describe("extractKeywordSegments", () => {
+  it("漢字・カタカナ・数字の連続をキーワードとして抽出する", () => {
+    const segments = extractKeywordSegments("私は東京タワーに3回行った。");
+    const keywords = segments.filter((s) => s.isKeyword).map((s) => s.text);
+    expect(keywords).toEqual(["私", "東京タワー", "3回行"]);
+  });
+
+  it("ひらがな・句読点はキーワード扱いにしない", () => {
+    const segments = extractKeywordSegments("これはテストです。");
+    const nonKeywords = segments.filter((s) => !s.isKeyword).map((s) => s.text);
+    expect(nonKeywords).toEqual(["これは", "です。"]);
+  });
+
+  it("元の文を全セグメントの結合で復元できる", () => {
+    const sentence = "私は東京タワーに3回行った。";
+    const segments = extractKeywordSegments(sentence);
+    expect(segments.map((s) => s.text).join("")).toBe(sentence);
   });
 });
