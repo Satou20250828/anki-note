@@ -164,6 +164,51 @@ describe("HomeScreen", () => {
     expect(loadFolders()).toEqual([]);
     expect(screen.getByLabelText("フォルダ")).toBeInTheDocument();
   });
+
+  it("削除ボタンは1回目のタップでは削除せず、確認状態になる", () => {
+    saveTexts([
+      {
+        id: "t1",
+        title: "面接原稿",
+        rawText: "一文目。",
+        folderId: null,
+        bookmarked: false,
+        chunkSize: 1,
+        chunks: [],
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ]);
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByText(/保存済みテキスト/));
+    fireEvent.click(screen.getByLabelText("面接原稿を削除"));
+
+    expect(loadTexts()).toHaveLength(1);
+    expect(screen.getByLabelText("面接原稿を本当に削除する")).toBeInTheDocument();
+  });
+
+  it("削除ボタンを2回タップするとテキストが削除される", () => {
+    saveTexts([
+      {
+        id: "t1",
+        title: "面接原稿",
+        rawText: "一文目。",
+        folderId: null,
+        bookmarked: false,
+        chunkSize: 1,
+        chunks: [],
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ]);
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByText(/保存済みテキスト/));
+    fireEvent.click(screen.getByLabelText("面接原稿を削除"));
+    fireEvent.click(screen.getByLabelText("面接原稿を本当に削除する"));
+
+    expect(loadTexts()).toHaveLength(0);
+    expect(screen.queryByText("面接原稿")).not.toBeInTheDocument();
+  });
 });
 
 describe("calcProgress", () => {
