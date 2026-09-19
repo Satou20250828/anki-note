@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { Trash2 } from "lucide-react"
 import type { Folder, Text } from "@/lib/types"
 import { loadTexts, saveTexts, loadFolders, saveFolders } from "@/lib/storage"
 import { splitSentences, buildChunks, makeTitle, calcProgress } from "@/lib/textProcessing"
@@ -22,6 +23,7 @@ export function HomeScreen() {
   const [body, setBody] = useState("")
   const [sentencesPerBlock, setSentencesPerBlock] = useState(2)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [deleteArmedId, setDeleteArmedId] = useState<string | null>(null)
   const [viewFilter, setViewFilter] = useState<ViewFilter>("all")
   const [viewFolderId, setViewFolderId] = useState<string | null>(null)
 
@@ -89,6 +91,17 @@ export function HomeScreen() {
     setFolderId(newFolder.id)
     setCreatingFolder(false)
     setNewFolderName("")
+  }
+
+  const handleDeleteClick = (id: string) => {
+    if (deleteArmedId === id) {
+      const next = texts.filter((t) => t.id !== id)
+      setTexts(next)
+      saveTexts(next)
+      setDeleteArmedId(null)
+    } else {
+      setDeleteArmedId(id)
+    }
   }
 
   const currentViewLabel =
@@ -162,10 +175,10 @@ export function HomeScreen() {
                   </li>
                 )}
                 {sortedTexts.map((item) => (
-                  <li key={item.id}>
+                  <li key={item.id} className="flex items-center gap-1 pl-11 pr-2">
                     <Link
                       href={`/practice/${item.id}`}
-                      className="flex w-full items-center gap-3 px-4 py-3 pl-11 text-left transition-colors hover:bg-[#e7edf7]/60"
+                      className="flex min-w-0 flex-1 items-center gap-3 px-2 py-3 text-left transition-colors hover:bg-[#e7edf7]/60"
                     >
                       <BookmarkStar filled={item.bookmarked} />
                       <span className="flex-1 truncate font-medium">{item.title}</span>
@@ -173,6 +186,18 @@ export function HomeScreen() {
                         {calcProgress(item)}%
                       </span>
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(item.id)}
+                      aria-label={deleteArmedId === item.id ? `${item.title}を本当に削除する` : `${item.title}を削除`}
+                      className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                        deleteArmedId === item.id
+                          ? "bg-red-600 text-white"
+                          : "text-[#3a5a9c]/60 hover:bg-red-50 hover:text-red-600"
+                      }`}
+                    >
+                      {deleteArmedId === item.id ? "本当に削除？" : <Trash2 className="size-4" />}
+                    </button>
                   </li>
                 ))}
               </ul>
