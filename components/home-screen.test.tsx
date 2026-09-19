@@ -97,6 +97,42 @@ describe("HomeScreen", () => {
     expect(screen.queryByText("スピーチ原稿")).not.toBeInTheDocument();
   });
 
+  it("メニューで「ブックマークのみ」を選ぶとブックマーク済みのテキストだけ表示される", () => {
+    saveTexts([
+      {
+        id: "t1",
+        title: "面接原稿",
+        rawText: "一文目。",
+        folderId: null,
+        bookmarked: true,
+        chunkSize: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        id: "t2",
+        title: "スピーチ原稿",
+        rawText: "一文目。",
+        folderId: null,
+        bookmarked: false,
+        chunkSize: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        createdAt: 2,
+        updatedAt: 2,
+      },
+    ]);
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByLabelText("メニューを開く"));
+    fireEvent.click(screen.getByText("ブックマークのみ"));
+
+    expect(screen.getByText("表示中：").nextSibling).toHaveTextContent("ブックマークのみ");
+
+    fireEvent.click(screen.getByText(/保存済みテキスト/));
+    expect(screen.getByText("面接原稿")).toBeInTheDocument();
+    expect(screen.queryByText("スピーチ原稿")).not.toBeInTheDocument();
+  });
+
   it("新しいフォルダを作るとlocalStorageに保存され、登録フォームの選択肢にも現れる", () => {
     render(<HomeScreen />);
     fireEvent.click(screen.getByLabelText("メニューを開く"));
