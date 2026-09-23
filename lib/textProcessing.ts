@@ -1,4 +1,4 @@
-import type { Chunk, Sentence, Text } from "./types";
+import type { Chunk, Sentence } from "./types";
 
 export function splitSentences(text: string): string[] {
   const trimmed = (text || "").trim();
@@ -19,17 +19,23 @@ export function splitSentences(text: string): string[] {
   return sentences;
 }
 
-export function buildChunks(sentences: string[], size: number): Chunk[] {
+/** 本文を文字数ベースでblockCount個のブロックに均等分割する（句読点・改行の有無に依存しない） */
+export function buildChunks(rawText: string, blockCount: number): Chunk[] {
+  const text = rawText.trim();
+  if (!text) return [];
+
+  const count = Math.max(1, Math.min(Math.floor(blockCount), text.length));
   const chunks: Chunk[] = [];
-  for (let i = 0; i < sentences.length; i += size) {
-    const group = sentences.slice(i, i + size);
-    const sentenceObjects: Sentence[] = group.map((text) => ({
-      text,
+  for (let i = 0; i < count; i++) {
+    const start = Math.floor((i * text.length) / count);
+    const end = Math.floor(((i + 1) * text.length) / count);
+    const sentence: Sentence = {
+      text: text.slice(start, end),
       revealed: true,
       hinted: false,
       kwRevealed: false,
-    }));
-    chunks.push({ sentences: sentenceObjects, status: "new" });
+    };
+    chunks.push({ sentences: [sentence] });
   }
   return chunks;
 }
@@ -37,12 +43,6 @@ export function buildChunks(sentences: string[], size: number): Chunk[] {
 export function makeTitle(rawText: string): string {
   const first = (splitSentences(rawText)[0] || rawText).trim();
   return first.length > 22 ? first.slice(0, 22) + "…" : first || "無題のテキスト";
-}
-
-export function calcProgress(text: Text): number {
-  if (text.chunks.length === 0) return 0;
-  const mastered = text.chunks.filter((c) => c.status === "mastered").length;
-  return Math.round((mastered / text.chunks.length) * 100);
 }
 
 /** 漢字・カタカナ・数字・英字の連続をキーワードとみなして分割する */

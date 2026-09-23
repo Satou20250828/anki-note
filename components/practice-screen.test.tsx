@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { fireEvent } from "@testing-library/react";
 import { PracticeScreen } from "./practice-screen";
 import { saveTexts, loadTexts } from "@/lib/storage";
@@ -12,12 +12,13 @@ function makeText(overrides: Partial<Text> = {}): Text {
     rawText: "一文目です。二文目です。三文目です。",
     folderId: null,
     bookmarked: false,
-    chunkSize: 1,
+    blockCount: 3,
     chunks: [
-      { sentences: [{ text: "一文目です。", revealed: true, hinted: false, kwRevealed: false }], status: "mastered" },
-      { sentences: [{ text: "二文目です。", revealed: true, hinted: false, kwRevealed: false }], status: "new" },
-      { sentences: [{ text: "東京タワーに3回行った。", revealed: true, hinted: false, kwRevealed: false }], status: "new" },
+      { sentences: [{ text: "一文目です。", revealed: true, hinted: false, kwRevealed: false }] },
+      { sentences: [{ text: "二文目です。", revealed: true, hinted: false, kwRevealed: false }] },
+      { sentences: [{ text: "東京タワーに3回行った。", revealed: true, hinted: false, kwRevealed: false }] },
     ],
+    status: "new",
     createdAt: 1,
     updatedAt: 1,
     ...overrides,
@@ -34,16 +35,12 @@ describe("PracticeScreen", () => {
     expect(screen.getByText("テキストが見つかりませんでした。")).toBeInTheDocument();
   });
 
-  it("タイトル・進捗が表示され、全ブロックの本文が一覧表示される", () => {
+  it("タイトルが表示され、全ブロックの本文が一覧表示される", () => {
     saveTexts([makeText()]);
     render(<PracticeScreen textId="t1" />);
     expect(screen.getByText("面接原稿")).toBeInTheDocument();
-    expect(screen.getByText("33%")).toBeInTheDocument();
     expect(screen.getByText("一文目です。")).toBeInTheDocument();
     expect(screen.getByText("二文目です。")).toBeInTheDocument();
-    expect(screen.getByText("①")).toBeInTheDocument();
-    expect(screen.getByText("②")).toBeInTheDocument();
-    expect(screen.getByText("③")).toBeInTheDocument();
   });
 
   it("ブロックごとに個別に隠す/表示を切り替えられる", () => {
@@ -89,16 +86,40 @@ describe("PracticeScreen", () => {
     expect(screen.getByText("3回行")).toBeInTheDocument();
   });
 
-  it("ブロックごとに習得状況を変更でき、localStorageに反映される", () => {
+  it("テキスト単位で習得状況を変更でき、localStorageに反映される", () => {
     saveTexts([makeText()]);
     render(<PracticeScreen textId="t1" />);
 
-    const statusGroups = screen.getAllByRole("group", { name: "このブロックの習得状況" });
-    fireEvent.click(within(statusGroups[1]).getByText("暗記中"));
+    fireEvent.change(screen.getByLabelText("このテキストの習得状況"), { target: { value: "learning" } });
 
     const saved = loadTexts();
-    expect(saved[0].chunks[0].status).toBe("mastered");
-    expect(saved[0].chunks[1].status).toBe("learning");
+    expect(saved[0].status).toBe("learning");
+  });
+
+  it("タイトルを編集するとlocalStorageと画面表示に反映される", () => {
+    saveTexts([makeText()]);
+    render(<PracticeScreen textId="t1" />);
+
+    fireEvent.click(screen.getByLabelText("タイトルを編集"));
+    fireEvent.change(screen.getByLabelText("テキストのタイトル"), { target: { value: "新しいタイトル" } });
+    fireEvent.click(screen.getByLabelText("タイトルを確定"));
+
+    expect(screen.getByText("新しいタイトル")).toBeInTheDocument();
+    const saved = loadTexts();
+    expect(saved[0].title).toBe("新しいタイトル");
+  });
+
+  it("タイトルの編集で空文字を確定しても、元のタイトルのままになる", () => {
+    saveTexts([makeText()]);
+    render(<PracticeScreen textId="t1" />);
+
+    fireEvent.click(screen.getByLabelText("タイトルを編集"));
+    fireEvent.change(screen.getByLabelText("テキストのタイトル"), { target: { value: "   " } });
+    fireEvent.click(screen.getByLabelText("タイトルを確定"));
+
+    expect(screen.getByText("面接原稿")).toBeInTheDocument();
+    const saved = loadTexts();
+    expect(saved[0].title).toBe("面接原稿");
   });
 
   it("ブックマークを切り替えるとlocalStorageに反映される", () => {

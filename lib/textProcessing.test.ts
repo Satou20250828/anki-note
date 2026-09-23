@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { splitSentences, buildChunks, makeTitle, calcProgress, extractKeywordSegments } from "./textProcessing";
-import type { Text } from "./types";
+import { splitSentences, buildChunks, makeTitle, extractKeywordSegments } from "./textProcessing";
 
 describe("splitSentences", () => {
   it("句点・感嘆符・疑問符で文を分割する", () => {
@@ -35,27 +34,40 @@ describe("splitSentences", () => {
 });
 
 describe("buildChunks", () => {
-  it("指定したサイズごとにチャンクへ分割する", () => {
-    const sentences = ["一文目。", "二文目。", "三文目。", "四文目。", "五文目。"];
-    const chunks = buildChunks(sentences, 2);
-    expect(chunks).toHaveLength(3);
-    expect(chunks[0].sentences.map((s) => s.text)).toEqual(["一文目。", "二文目。"]);
-    expect(chunks[2].sentences.map((s) => s.text)).toEqual(["五文目。"]);
+  it("指定した分割数ちょうどのブロックに、文字数がほぼ均等になるよう分割する", () => {
+    const chunks = buildChunks("一二三四五六七八九十", 5);
+    expect(chunks).toHaveLength(5);
+    expect(chunks.map((c) => c.sentences[0].text)).toEqual(["一二", "三四", "五六", "七八", "九十"]);
   });
 
-  it("各文はrevealed:trueの初期状態を持つ", () => {
-    const chunks = buildChunks(["一文目。"], 1);
+  it("割り切れない文字数でも指定した分割数ちょうどになり、元の文章を復元できる", () => {
+    const chunks = buildChunks("一二三四五六七", 3);
+    expect(chunks).toHaveLength(3);
+    expect(chunks.map((c) => c.sentences[0].text).join("")).toBe("一二三四五六七");
+  });
+
+  it("句読点や改行が一切なくても指定した分割数どおりに分割できる", () => {
+    const chunks = buildChunks("くとうてんもかいぎょうもないぶんしょう", 4);
+    expect(chunks).toHaveLength(4);
+  });
+
+  it("分割数が文字数を超える場合は文字数と同じ数のブロックになる", () => {
+    const chunks = buildChunks("あいう", 10);
+    expect(chunks).toHaveLength(3);
+  });
+
+  it("空文字の場合は空配列を返す", () => {
+    expect(buildChunks("", 5)).toEqual([]);
+  });
+
+  it("各ブロックはrevealed:trueの初期状態を持つ", () => {
+    const chunks = buildChunks("一文字", 1);
     expect(chunks[0].sentences[0]).toEqual({
-      text: "一文目。",
+      text: "一文字",
       revealed: true,
       hinted: false,
       kwRevealed: false,
     });
-  });
-
-  it("各チャンクの初期ステータスはnewである", () => {
-    const chunks = buildChunks(["一文目。", "二文目。"], 1);
-    expect(chunks.every((c) => c.status === "new")).toBe(true);
   });
 });
 
@@ -73,37 +85,6 @@ describe("makeTitle", () => {
 
   it("空文字の場合は無題のテキストを返す", () => {
     expect(makeTitle("")).toBe("無題のテキスト");
-  });
-});
-
-describe("calcProgress", () => {
-  const base: Text = {
-    id: "t1",
-    title: "テスト",
-    rawText: "",
-    folderId: null,
-    bookmarked: false,
-    chunkSize: 1,
-    chunks: [],
-    createdAt: 0,
-    updatedAt: 0,
-  };
-
-  it("チャンクがない場合は0を返す", () => {
-    expect(calcProgress(base)).toBe(0);
-  });
-
-  it("習得済みチャンクの割合を百分率で返す", () => {
-    const text: Text = {
-      ...base,
-      chunks: [
-        { sentences: [], status: "mastered" },
-        { sentences: [], status: "learning" },
-        { sentences: [], status: "new" },
-        { sentences: [], status: "mastered" },
-      ],
-    };
-    expect(calcProgress(text)).toBe(50);
   });
 });
 

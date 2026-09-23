@@ -6,14 +6,11 @@ import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 import type { ChunkStatus, Text } from "@/lib/types"
 import { loadTexts, saveTexts } from "@/lib/storage"
-import { calcProgress } from "@/lib/textProcessing"
 import { PracticeHeader } from "./practice-header"
 import { ModeTabs, type PracticeMode } from "./mode-tabs"
 import { TextDisplay } from "./text-display"
 import { StatusSelector } from "./status-selector"
 import { TextNav } from "./text-nav"
-
-const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"]
 
 export function PracticeScreen({ textId }: { textId: string }) {
   const router = useRouter()
@@ -59,12 +56,10 @@ export function PracticeScreen({ textId }: { textId: string }) {
 
   const toggleFavorite = () => updateText((t) => ({ ...t, bookmarked: !t.bookmarked, updatedAt: Date.now() }))
 
-  const setStatus = (index: number, status: ChunkStatus) => {
-    updateText((t) => ({
-      ...t,
-      updatedAt: Date.now(),
-      chunks: t.chunks.map((c, i) => (i === index ? { ...c, status } : c)),
-    }))
+  const renameText = (title: string) => updateText((t) => ({ ...t, title, updatedAt: Date.now() }))
+
+  const setStatus = (status: ChunkStatus) => {
+    updateText((t) => ({ ...t, status, updatedAt: Date.now() }))
   }
 
   const toggleRevealed = (index: number) => {
@@ -89,10 +84,12 @@ export function PracticeScreen({ textId }: { textId: string }) {
       <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6">
         <PracticeHeader
           title={text.title}
-          progress={calcProgress(text)}
           favorite={text.bookmarked}
           onToggleFavorite={toggleFavorite}
+          onRename={renameText}
         />
+
+        <StatusSelector value={text.status} onChange={setStatus} />
 
         <ModeTabs active={mode} onChange={setMode} />
 
@@ -107,16 +104,13 @@ export function PracticeScreen({ textId }: { textId: string }) {
 
         <div className="flex flex-col gap-5">
           {text.chunks.map((chunk, index) => (
-            <div key={index} className="flex flex-col gap-3">
-              <span className="text-lg font-bold text-[#1f2f52]">{CIRCLED[index] ?? index + 1}</span>
-              <TextDisplay
-                chunk={chunk}
-                mode={mode}
-                revealed={revealed[index] ?? true}
-                onToggleReveal={() => toggleRevealed(index)}
-              />
-              <StatusSelector value={chunk.status} onChange={(status) => setStatus(index, status)} />
-            </div>
+            <TextDisplay
+              key={index}
+              chunk={chunk}
+              mode={mode}
+              revealed={revealed[index] ?? true}
+              onToggleReveal={() => toggleRevealed(index)}
+            />
           ))}
         </div>
 

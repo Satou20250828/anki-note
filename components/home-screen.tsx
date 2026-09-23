@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import type { Folder, Text } from "@/lib/types"
 import { loadTexts, saveTexts, loadFolders, saveFolders } from "@/lib/storage"
-import { splitSentences, buildChunks, makeTitle, calcProgress } from "@/lib/textProcessing"
+import { buildChunks, makeTitle } from "@/lib/textProcessing"
 import { MenuDrawer, type ViewFilter } from "./menu-drawer"
+import { STATUS_LABEL } from "./status-selector"
 
 const SAMPLE_TITLE = "自己紹介サンプル"
 const SAMPLE_BODY =
@@ -23,7 +24,6 @@ export function HomeScreen() {
   const [creatingFolder, setCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
   const [body, setBody] = useState("")
-  const [sentencesPerBlock, setSentencesPerBlock] = useState(2)
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteArmedId, setDeleteArmedId] = useState<string | null>(null)
   const [viewFilter, setViewFilter] = useState<ViewFilter>("all")
@@ -36,8 +36,7 @@ export function HomeScreen() {
     setFolders(loadFolders())
   }, [])
 
-  const decrement = () => setSentencesPerBlock((n) => Math.max(1, n - 1))
-  const increment = () => setSentencesPerBlock((n) => Math.min(20, n + 1))
+  const charCount = body.trim().length
 
   const useSample = () => {
     setTitle(SAMPLE_TITLE)
@@ -45,8 +44,7 @@ export function HomeScreen() {
   }
 
   const handleStart = () => {
-    const sentences = splitSentences(body)
-    if (sentences.length === 0) return
+    if (charCount === 0) return
 
     const now = Date.now()
     const newText: Text = {
@@ -55,8 +53,9 @@ export function HomeScreen() {
       rawText: body,
       folderId: folderId || null,
       bookmarked: false,
-      chunkSize: sentencesPerBlock,
-      chunks: buildChunks(sentences, sentencesPerBlock),
+      blockCount: 1,
+      chunks: buildChunks(body, 1),
+      status: "new",
       createdAt: now,
       updatedAt: now,
     }
@@ -67,7 +66,6 @@ export function HomeScreen() {
     setTitle("")
     setBody("")
     setFolderId("")
-    setSentencesPerBlock(2)
     router.push(`/practice/${newText.id}`)
   }
 
@@ -185,8 +183,8 @@ export function HomeScreen() {
                     >
                       <BookmarkStar filled={item.bookmarked} />
                       <span className="flex-1 truncate font-medium">{item.title}</span>
-                      <span className="text-sm font-semibold tabular-nums text-[#3a5a9c]">
-                        {calcProgress(item)}%
+                      <span className="text-sm font-semibold text-[#3a5a9c]">
+                        {STATUS_LABEL[item.status]}
                       </span>
                     </Link>
                     <button
@@ -295,33 +293,16 @@ export function HomeScreen() {
                 />
               </Field>
 
-              <Field label="1ブロックの文数">
-                <div className="inline-flex items-center gap-3">
-                  <StepperButton onClick={decrement} aria-label="文数を減らす" disabled={sentencesPerBlock <= 1}>
-                    −
-                  </StepperButton>
-                  <span className="w-8 text-center text-lg font-semibold tabular-nums" aria-live="polite">
-                    {sentencesPerBlock}
-                  </span>
-                  <StepperButton onClick={increment} aria-label="文数を増やす" disabled={sentencesPerBlock >= 20}>
-                    ＋
-                  </StepperButton>
-                </div>
-              </Field>
             </div>
-
-            {!splitSentences(body).length && body.length > 0 && (
-              <p className="mt-3 text-sm text-red-600">文章を認識できませんでした。内容を確認してください。</p>
-            )}
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={handleStart}
-                disabled={!splitSentences(body).length}
+                disabled={charCount === 0}
                 className="flex-1 rounded-lg bg-[#1f2f52] px-4 py-2.5 font-semibold text-white transition-colors hover:bg-[#3a5a9c] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3a5a9c] focus-visible:ring-offset-2"
               >
-                分割してはじめる
+                はじめる
               </button>
               <button
                 type="button"
@@ -369,21 +350,6 @@ function Field({
       </label>
       {children}
     </div>
-  )
-}
-
-function StepperButton({
-  children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      type="button"
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#3a5a9c]/40 bg-white text-xl font-medium text-[#3a5a9c] transition-colors hover:bg-[#e7edf7] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3a5a9c]"
-      {...props}
-    >
-      {children}
-    </button>
   )
 }
 
