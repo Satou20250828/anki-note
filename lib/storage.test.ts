@@ -8,8 +8,9 @@ const sampleText: Text = {
   rawText: "これはサンプルです。",
   folderId: null,
   bookmarked: false,
-  chunkSize: 2,
+  blockCount: 2,
   chunks: [],
+  status: "new",
   createdAt: 0,
   updatedAt: 0,
 };

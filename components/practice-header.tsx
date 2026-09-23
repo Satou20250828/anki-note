@@ -1,16 +1,36 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, Star } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { ArrowLeft, Star, Pencil, Check } from "lucide-react"
 
 type PracticeHeaderProps = {
   title: string
-  progress: number
   favorite: boolean
   onToggleFavorite: () => void
+  onRename: (title: string) => void
 }
 
-export function PracticeHeader({ title, progress, favorite, onToggleFavorite }: PracticeHeaderProps) {
+export function PracticeHeader({ title, favorite, onToggleFavorite, onRename }: PracticeHeaderProps) {
+  const [editing, setEditing] = useState(false)
+  const [draftTitle, setDraftTitle] = useState(title)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
+  const startEdit = () => {
+    setDraftTitle(title)
+    setEditing(true)
+  }
+
+  const commitEdit = () => {
+    const name = draftTitle.trim()
+    if (name) onRename(name)
+    setEditing(false)
+  }
+
   return (
     <header className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
@@ -35,26 +55,47 @@ export function PracticeHeader({ title, progress, favorite, onToggleFavorite }: 
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-[#1f2f52]">{title}</h1>
-
-        <div className="flex items-center gap-3">
-          <div
-            className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#cdd9ef]"
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="暗記の進捗"
+      {editing ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            commitEdit()
+          }}
+          className="flex items-center gap-2"
+        >
+          <input
+            ref={inputRef}
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing || e.keyCode === 229) return
+              if (e.key === "Enter") commitEdit()
+            }}
+            aria-label="テキストのタイトル"
+            className="min-w-0 flex-1 rounded-lg border border-[#3a5a9c] bg-white px-3 py-1.5 text-2xl font-bold text-[#1f2f52] outline-none"
+          />
+          <button
+            type="submit"
+            aria-label="タイトルを確定"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[#3a5a9c] text-white transition-colors hover:bg-[#1f2f52]"
           >
-            <div
-              className="h-full rounded-full bg-[#3a5a9c] transition-[width] duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span className="w-11 text-right text-sm font-semibold tabular-nums text-[#1f2f52]">{progress}%</span>
+            <Check className="size-4" aria-hidden="true" />
+          </button>
+        </form>
+      ) : (
+        <div className="flex items-center gap-2">
+          <h1 className="min-w-0 flex-1 truncate text-2xl font-bold text-[#1f2f52]">{title}</h1>
+          <button
+            type="button"
+            onClick={startEdit}
+            aria-label="タイトルを編集"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[#3a5a9c] transition-colors hover:bg-[#d5e0f2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3a5a9c]"
+          >
+            <Pencil className="size-4" aria-hidden="true" />
+          </button>
         </div>
-      </div>
+      )}
     </header>
   )
 }

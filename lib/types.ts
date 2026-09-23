@@ -9,7 +9,6 @@ export interface Sentence {
 
 export interface Chunk {
   sentences: Sentence[];
-  status: ChunkStatus;
 }
 
 export interface Folder {
@@ -23,8 +22,9 @@ export interface Text {
   rawText: string;
   folderId: string | null;
   bookmarked: boolean;
-  chunkSize: number;
+  blockCount: number;
   chunks: Chunk[];
+  status: ChunkStatus;
   createdAt: number;
   updatedAt: number;
 }

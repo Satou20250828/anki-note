@@ -1,27 +1,32 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Eye, EyeOff } from "lucide-react"
 import type { ChunkStatus, Text } from "@/lib/types"
 import { loadTexts, saveTexts } from "@/lib/storage"
-import { calcProgress } from "@/lib/textProcessing"
 import { PracticeHeader } from "./practice-header"
-import { BlockTabs } from "./block-tabs"
 import { ModeTabs, type PracticeMode } from "./mode-tabs"
 import { TextDisplay } from "./text-display"
 import { StatusSelector } from "./status-selector"
-import { BlockNav } from "./block-nav"
+import { TextNav } from "./text-nav"
 
 export function PracticeScreen({ textId }: { textId: string }) {
+  const router = useRouter()
+  const [allTexts, setAllTexts] = useState<Text[]>([])
   const [text, setText] = useState<Text | null>(null)
   const [loaded, setLoaded] = useState(false)
-  const [activeChunk, setActiveChunk] = useState(0)
   const [mode, setMode] = useState<PracticeMode>("memorize")
+  const [revealed, setRevealed] = useState<boolean[]>([])
 
   useEffect(() => {
-    const found = loadTexts().find((t) => t.id === textId) ?? null
+    const all = loadTexts()
+    const found = all.find((t) => t.id === textId) ?? null
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAllTexts(all)
     setText(found)
+    setRevealed(found ? found.chunks.map(() => true) : [])
     setLoaded(true)
   }, [textId])
 
@@ -30,6 +35,7 @@ export function PracticeScreen({ textId }: { textId: string }) {
       if (!prev) return prev
       const updated = updater(prev)
       const all = loadTexts().map((t) => (t.id === updated.id ? updated : t))
+      setAllTexts(all)
       saveTexts(all)
       return updated
     })
@@ -48,44 +54,71 @@ export function PracticeScreen({ textId }: { textId: string }) {
 
   if (!text) return null
 
-  const chunk = text.chunks[activeChunk]
-
   const toggleFavorite = () => updateText((t) => ({ ...t, bookmarked: !t.bookmarked, updatedAt: Date.now() }))
 
+  const renameText = (title: string) => updateText((t) => ({ ...t, title, updatedAt: Date.now() }))
+
   const setStatus = (status: ChunkStatus) => {
-    updateText((t) => ({
-      ...t,
-      updatedAt: Date.now(),
-      chunks: t.chunks.map((c, i) => (i === activeChunk ? { ...c, status } : c)),
-    }))
+    updateText((t) => ({ ...t, status, updatedAt: Date.now() }))
   }
 
-  const goPrev = () => setActiveChunk((i) => Math.max(0, i - 1))
-  const goNext = () => setActiveChunk((i) => Math.min(text.chunks.length - 1, i + 1))
+  const toggleRevealed = (index: number) => {
+    setRevealed((prev) => prev.map((v, i) => (i === index ? !v : v)))
+  }
+
+  const allRevealed = revealed.length > 0 && revealed.every(Boolean)
+  const toggleAllRevealed = () => {
+    setRevealed(new Array(text.chunks.length).fill(!allRevealed))
+  }
+
+  // 前後のテキストへの移動は、同じフォルダ内・更新日時の新しい順に限定する
+  const sameFolderTexts = [...allTexts]
+    .filter((t) => t.folderId === text.folderId)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+  const currentIndex = sameFolderTexts.findIndex((t) => t.id === text.id)
+  const prevText = currentIndex > 0 ? sameFolderTexts[currentIndex - 1] : null
+  const nextText = currentIndex >= 0 && currentIndex < sameFolderTexts.length - 1 ? sameFolderTexts[currentIndex + 1] : null
 
   return (
     <main className="min-h-dvh bg-[#e7edf7] px-4 py-6">
       <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6">
         <PracticeHeader
           title={text.title}
-          progress={calcProgress(text)}
           favorite={text.bookmarked}
           onToggleFavorite={toggleFavorite}
+          onRename={renameText}
         />
 
-        <BlockTabs count={text.chunks.length} activeIndex={activeChunk} onSelect={setActiveChunk} />
+        <StatusSelector value={text.status} onChange={setStatus} />
 
         <ModeTabs active={mode} onChange={setMode} />
 
-        <TextDisplay key={`${activeChunk}-${mode}`} chunk={chunk} mode={mode} />
+        <button
+          type="button"
+          onClick={toggleAllRevealed}
+          className="inline-flex w-fit items-center gap-1.5 self-end rounded-lg border border-[#3a5a9c]/40 px-3 py-1.5 text-xs font-semibold text-[#3a5a9c] transition-colors hover:bg-[#d5e0f2]"
+        >
+          {allRevealed ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+          {allRevealed ? "全部隠す" : "全部表示"}
+        </button>
 
-        <StatusSelector value={chunk.status} onChange={setStatus} />
+        <div className="flex flex-col gap-5">
+          {text.chunks.map((chunk, index) => (
+            <TextDisplay
+              key={index}
+              chunk={chunk}
+              mode={mode}
+              revealed={revealed[index] ?? true}
+              onToggleReveal={() => toggleRevealed(index)}
+            />
+          ))}
+        </div>
 
-        <BlockNav
-          onPrev={goPrev}
-          onNext={goNext}
-          hasPrev={activeChunk > 0}
-          hasNext={activeChunk < text.chunks.length - 1}
+        <TextNav
+          onPrev={() => prevText && router.push(`/practice/${prevText.id}`)}
+          onNext={() => nextText && router.push(`/practice/${nextText.id}`)}
+          hasPrev={!!prevText}
+          hasNext={!!nextText}
         />
       </div>
     </main>

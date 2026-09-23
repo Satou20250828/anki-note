@@ -9,55 +9,61 @@ import type { PracticeMode } from "./mode-tabs"
 type TextDisplayProps = {
   chunk: Chunk
   mode: PracticeMode
+  revealed: boolean
+  onToggleReveal: () => void
 }
 
-export function TextDisplay({ chunk, mode }: TextDisplayProps) {
-  if (mode === "memorize") {
-    return <MemorizePanel chunk={chunk} />
+/** 1ブロック分の表示。revealedがfalseの間は中身を見せず、タップで表示に切り替える */
+export function TextDisplay({ chunk, mode, revealed, onToggleReveal }: TextDisplayProps) {
+  if (!revealed) {
+    return (
+      <button
+        type="button"
+        onClick={onToggleReveal}
+        aria-label="このブロックを表示する"
+        className="flex min-h-32 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-medium text-[#3a5a9c] ring-1 ring-[#cdd9ef] transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3a5a9c]"
+      >
+        <Eye className="size-4" aria-hidden="true" />
+        タップで表示
+      </button>
+    )
   }
-  if (mode === "cloze") {
-    return <ClozePanel chunk={chunk} />
-  }
-  return <KeywordPanel chunk={chunk} />
-}
-
-/** 暗記モード：エリア全体をタップして本文の表示/非表示を切り替える */
-function MemorizePanel({ chunk }: { chunk: Chunk }) {
-  const [visible, setVisible] = useState(true)
 
   return (
-    <button
-      type="button"
-      onClick={() => setVisible((v) => !v)}
-      aria-pressed={visible}
-      aria-label={visible ? "本文を隠す" : "本文を表示する"}
-      className="group relative min-h-56 w-full rounded-2xl bg-white p-5 text-left ring-1 ring-[#cdd9ef] transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3a5a9c]"
-    >
-      <span className="absolute right-4 top-4 inline-flex items-center gap-1 text-xs font-medium text-[#3a5a9c]">
-        {visible ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-        タップで{visible ? "非表示" : "表示"}
-      </span>
-
-      <div className={`space-y-3 pt-8 transition ${visible ? "" : "select-none blur-sm"}`} aria-hidden={!visible}>
-        {chunk.sentences.map((sentence, i) => (
-          <p key={i} className="text-lg leading-relaxed text-[#1f2f52]">
-            {sentence.text}
-          </p>
-        ))}
+    <div className="relative min-h-32 w-full rounded-2xl bg-white p-5 ring-1 ring-[#cdd9ef]">
+      <button
+        type="button"
+        onClick={onToggleReveal}
+        aria-label="このブロックを隠す"
+        className="absolute right-4 top-4 inline-flex items-center gap-1 text-xs font-medium text-[#3a5a9c] hover:text-[#1f2f52]"
+      >
+        <EyeOff className="size-4" aria-hidden="true" />
+        隠す
+      </button>
+      <div className="pt-8">
+        {mode === "memorize" && <MemorizeContent chunk={chunk} />}
+        {mode === "cloze" && <ClozeContent chunk={chunk} />}
+        {mode === "keyword" && <KeywordContent chunk={chunk} />}
       </div>
-
-      {!visible && (
-        <span className="pointer-events-none absolute inset-x-0 bottom-6 text-center text-sm font-medium text-[#3a5a9c]">
-          思い出してからタップ
-        </span>
-      )}
-    </button>
+    </div>
   )
 }
 
-/** 穴埋めモード：自動検出した漢字・カタカナ・数字の並びを空欄にし、個別にタップして答え合わせする */
-function ClozePanel({ chunk }: { chunk: Chunk }) {
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({})
+function MemorizeContent({ chunk }: { chunk: Chunk }) {
+  return (
+    <div className="space-y-3">
+      {chunk.sentences.map((sentence, i) => (
+        <p key={i} className="text-lg leading-relaxed text-[#1f2f52]">
+          {sentence.text}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+/** 穴埋め：自動検出した漢字・カタカナ・数字の並びを空欄にし、個別にタップして答え合わせする */
+function ClozeContent({ chunk }: { chunk: Chunk }) {
+  const [revealedBlanks, setRevealedBlanks] = useState<Record<string, boolean>>({})
 
   const segmentsBySentence = useMemo(
     () => chunk.sentences.map((s) => extractKeywordSegments(s.text)),
@@ -65,39 +71,37 @@ function ClozePanel({ chunk }: { chunk: Chunk }) {
   )
 
   return (
-    <div className="min-h-56 w-full rounded-2xl bg-white p-5 ring-1 ring-[#cdd9ef]">
-      <div className="space-y-3 leading-relaxed">
-        {segmentsBySentence.map((segments, si) => (
-          <p key={si} className="text-lg text-[#1f2f52]">
-            {segments.map((seg, i) => {
-              if (!seg.isKeyword || !seg.text.trim()) return <span key={i}>{seg.text}</span>
-              const key = `${si}-${i}`
-              const isRevealed = revealed[key]
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setRevealed((r) => ({ ...r, [key]: !r[key] }))}
-                  aria-label={isRevealed ? `答え: ${seg.text}` : "空欄。タップして答えを表示"}
-                  className={`mx-0.5 inline-flex min-w-10 items-center justify-center rounded-md px-1.5 align-baseline text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3a5a9c] ${
-                    isRevealed
-                      ? "bg-[#d5e0f2] text-[#1f2f52]"
-                      : "bg-[#e7edf7] text-transparent ring-1 ring-dashed ring-[#3a5a9c]"
-                  }`}
-                >
-                  {isRevealed ? seg.text : "　".repeat(seg.text.length)}
-                </button>
-              )
-            })}
-          </p>
-        ))}
-      </div>
+    <div className="space-y-3 leading-relaxed">
+      {segmentsBySentence.map((segments, si) => (
+        <p key={si} className="text-lg text-[#1f2f52]">
+          {segments.map((seg, i) => {
+            if (!seg.isKeyword || !seg.text.trim()) return <span key={i}>{seg.text}</span>
+            const key = `${si}-${i}`
+            const isRevealed = revealedBlanks[key]
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setRevealedBlanks((r) => ({ ...r, [key]: !r[key] }))}
+                aria-label={isRevealed ? `答え: ${seg.text}` : "空欄。タップして答えを表示"}
+                className={`mx-0.5 inline-flex min-w-10 items-center justify-center rounded-md px-1.5 align-baseline text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3a5a9c] ${
+                  isRevealed
+                    ? "bg-[#d5e0f2] text-[#1f2f52]"
+                    : "bg-[#e7edf7] text-transparent ring-1 ring-dashed ring-[#3a5a9c]"
+                }`}
+              >
+                {isRevealed ? seg.text : "　".repeat(seg.text.length)}
+              </button>
+            )
+          })}
+        </p>
+      ))}
     </div>
   )
 }
 
-/** キーワードモード：自動検出した漢字・カタカナ・数字の並びだけを手がかりとして表示する */
-function KeywordPanel({ chunk }: { chunk: Chunk }) {
+/** キーワード：自動検出した漢字・カタカナ・数字の並びだけを手がかりとして表示する */
+function KeywordContent({ chunk }: { chunk: Chunk }) {
   const keywords = useMemo(
     () =>
       chunk.sentences.flatMap((s) =>
@@ -109,7 +113,7 @@ function KeywordPanel({ chunk }: { chunk: Chunk }) {
   )
 
   return (
-    <div className="min-h-56 w-full rounded-2xl bg-white p-5 ring-1 ring-[#cdd9ef]">
+    <>
       <ul className="flex flex-wrap gap-2">
         {keywords.map((kw, i) => (
           <li key={i} className="rounded-full bg-[#1f2f52] px-4 py-1.5 text-base font-medium text-white">
@@ -120,6 +124,6 @@ function KeywordPanel({ chunk }: { chunk: Chunk }) {
       <p className="mt-5 text-sm leading-relaxed text-[#3a5a9c]">
         キーワードを手がかりに、本文を思い出して声に出してみましょう。
       </p>
-    </div>
+    </>
   )
 }

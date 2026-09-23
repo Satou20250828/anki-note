@@ -1,12 +1,23 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { HomeScreen } from "./home-screen";
-import { calcProgress } from "@/lib/textProcessing";
 import { loadTexts, loadFolders, saveTexts, saveFolders } from "@/lib/storage";
-import type { Text } from "@/lib/types";
+
+const pushMock = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: pushMock,
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
 
 beforeEach(() => {
   localStorage.clear();
+  pushMock.mockClear();
 });
 
 describe("HomeScreen", () => {
@@ -31,9 +42,9 @@ describe("HomeScreen", () => {
     expect((screen.getByLabelText("本文") as HTMLTextAreaElement).value.length).toBeGreaterThan(0);
   });
 
-  it("本文が空の場合は分割してはじめるボタンが無効になる", () => {
+  it("本文が空の場合ははじめるボタンが無効になる", () => {
     render(<HomeScreen />);
-    expect(screen.getByText("分割してはじめる")).toBeDisabled();
+    expect(screen.getByText("はじめる")).toBeDisabled();
   });
 
   it("テキストを登録するとlocalStorageに保存され、一覧に表示される", () => {
@@ -42,14 +53,26 @@ describe("HomeScreen", () => {
     fireEvent.change(screen.getByLabelText("本文"), {
       target: { value: "一文目です。二文目です。" },
     });
-    fireEvent.click(screen.getByText("分割してはじめる"));
+    fireEvent.click(screen.getByText("はじめる"));
 
     const saved = loadTexts();
     expect(saved).toHaveLength(1);
     expect(saved[0].title).toBe("面接原稿");
     expect(saved[0].chunks.length).toBeGreaterThan(0);
 
-    expect(screen.getByText("面接原稿")).toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith(`/practice/${saved[0].id}`);
+  });
+
+  it("句読点や改行がない本文でも、分割せず1ブロックとして登録される", () => {
+    render(<HomeScreen />);
+    fireEvent.change(screen.getByLabelText("本文"), {
+      target: { value: "くとうてんもかいぎょうもないながいぶんしょうです" },
+    });
+    fireEvent.click(screen.getByText("はじめる"));
+
+    const saved = loadTexts();
+    expect(saved[0].chunks).toHaveLength(1);
+    expect(saved[0].chunks[0].sentences[0].text).toBe("くとうてんもかいぎょうもないながいぶんしょうです");
   });
 
   it("ハンバーガーボタンでメニューを開くとフォルダ一覧が見える", () => {
@@ -69,8 +92,9 @@ describe("HomeScreen", () => {
         rawText: "一文目。",
         folderId: "f1",
         bookmarked: false,
-        chunkSize: 1,
-        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        blockCount: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }] }],
+        status: "new",
         createdAt: 1,
         updatedAt: 1,
       },
@@ -80,8 +104,9 @@ describe("HomeScreen", () => {
         rawText: "一文目。",
         folderId: null,
         bookmarked: false,
-        chunkSize: 1,
-        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        blockCount: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }] }],
+        status: "new",
         createdAt: 2,
         updatedAt: 2,
       },
@@ -105,8 +130,9 @@ describe("HomeScreen", () => {
         rawText: "一文目。",
         folderId: null,
         bookmarked: true,
-        chunkSize: 1,
-        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        blockCount: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }] }],
+        status: "new",
         createdAt: 1,
         updatedAt: 1,
       },
@@ -116,8 +142,9 @@ describe("HomeScreen", () => {
         rawText: "一文目。",
         folderId: null,
         bookmarked: false,
-        chunkSize: 1,
-        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }], status: "new" }],
+        blockCount: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }] }],
+        status: "new",
         createdAt: 2,
         updatedAt: 2,
       },
@@ -173,8 +200,9 @@ describe("HomeScreen", () => {
         rawText: "一文目。",
         folderId: null,
         bookmarked: false,
-        chunkSize: 1,
+        blockCount: 1,
         chunks: [],
+        status: "new",
         createdAt: 1,
         updatedAt: 1,
       },
@@ -195,8 +223,9 @@ describe("HomeScreen", () => {
         rawText: "一文目。",
         folderId: null,
         bookmarked: false,
-        chunkSize: 1,
+        blockCount: 1,
         chunks: [],
+        status: "new",
         createdAt: 1,
         updatedAt: 1,
       },
@@ -209,35 +238,24 @@ describe("HomeScreen", () => {
     expect(loadTexts()).toHaveLength(0);
     expect(screen.queryByText("面接原稿")).not.toBeInTheDocument();
   });
-});
 
-describe("calcProgress", () => {
-  const base: Text = {
-    id: "t1",
-    title: "テスト",
-    rawText: "",
-    folderId: null,
-    bookmarked: false,
-    chunkSize: 1,
-    chunks: [],
-    createdAt: 0,
-    updatedAt: 0,
-  };
-
-  it("チャンクがない場合は0を返す", () => {
-    expect(calcProgress(base)).toBe(0);
-  });
-
-  it("習得済みチャンクの割合を百分率で返す", () => {
-    const text: Text = {
-      ...base,
-      chunks: [
-        { sentences: [], status: "mastered" },
-        { sentences: [], status: "learning" },
-        { sentences: [], status: "new" },
-        { sentences: [], status: "mastered" },
-      ],
-    };
-    expect(calcProgress(text)).toBe(50);
+  it("保存済み一覧には習得状況のバッジが表示される", () => {
+    saveTexts([
+      {
+        id: "t1",
+        title: "面接原稿",
+        rawText: "一文目。",
+        folderId: null,
+        bookmarked: false,
+        blockCount: 1,
+        chunks: [],
+        status: "learning",
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ]);
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByText(/保存済みテキスト/));
+    expect(screen.getByText("暗記中")).toBeInTheDocument();
   });
 });
