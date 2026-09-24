@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { BookOpen, ArrowRight, CheckCircle2, Quote, Eye, Smile, Zap, BookmarkPlus } from "lucide-react"
+import { BookOpen, ArrowRight, CheckCircle2, Quote, Eye, EyeOff, Smile, Zap, BookmarkPlus } from "lucide-react"
 import { extractKeywordSegments } from "@/lib/textProcessing"
 
 const DEMO_SENTENCE = "長文暗記のコツは、全体をざっくり理解すること。そして、覚えた実感を少しずつ積み重ねていくことです。"
@@ -33,6 +33,12 @@ const FEATURES: { icon: typeof Eye; iconBg: string; iconColor: string; title: st
   },
 ]
 
+const STEPS: { title: string; description: string }[] = [
+  { title: "文章を貼り付けて登録", description: "覚えたい文章をそのままコピー＆ペーストするだけ。分割や整形は不要です。" },
+  { title: "隠して思い出す", description: "文章をタップで隠して、覚えているか確認。暗記・穴埋め・キーワードの3モードから選べます。" },
+  { title: "習得状況を記録", description: "未着手・暗記中・習得済みを自分の感覚で管理。誰かと比べる必要はありません。" },
+]
+
 const METRICS = [
   { value: "100", unit: "%", label: "ローカル保存" },
   { value: "0", unit: "秒", label: "会員登録・ログイン" },
@@ -42,6 +48,7 @@ const METRICS = [
 export function LandingScreen() {
   const [mode, setMode] = useState<DemoMode>("memorize")
   const [revealed, setRevealed] = useState<Record<number, boolean>>({})
+  const [memorizeRevealed, setMemorizeRevealed] = useState(true)
 
   const segments = useMemo(() => extractKeywordSegments(DEMO_SENTENCE), [])
   const keywords = segments.filter((s) => s.isKeyword && s.text.trim())
@@ -85,16 +92,18 @@ export function LandingScreen() {
                   </p>
                 </div>
 
-                <Link
-                  href="/app"
-                  className="mt-6 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1f2f52] px-7 py-3 font-semibold text-white transition-colors hover:bg-[#3a5a9c] sm:w-auto"
-                >
-                  はじめる
-                  <ArrowRight className="size-[18px]" aria-hidden="true" />
-                </Link>
-                <div className="mt-3 flex items-center gap-1.5 text-xs text-[#3a5a9c]">
-                  <CheckCircle2 className="size-4 text-[#2e9e6b]" aria-hidden="true" />
-                  アカウント登録不要・ずっと無料（ブラウザ完結）
+                <div className="mt-6 flex w-full flex-col items-center gap-3">
+                  <Link
+                    href="/app"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1f2f52] px-7 py-3 font-semibold text-white transition-colors hover:bg-[#3a5a9c] sm:w-auto"
+                  >
+                    はじめる
+                    <ArrowRight className="size-[18px]" aria-hidden="true" />
+                  </Link>
+                  <div className="flex items-center gap-1.5 text-xs text-[#3a5a9c]">
+                    <CheckCircle2 className="size-4 text-[#2e9e6b]" aria-hidden="true" />
+                    アカウント登録不要・ずっと無料（ブラウザ完結）
+                  </div>
                 </div>
               </div>
 
@@ -113,7 +122,28 @@ export function LandingScreen() {
 
                 <div className="mt-3 min-h-[150px] rounded-lg bg-white p-4 shadow-sm">
                   {mode === "memorize" && (
-                    <p className="text-base leading-loose">{DEMO_SENTENCE}</p>
+                    memorizeRevealed ? (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setMemorizeRevealed(false)}
+                          className="absolute right-0 top-0 inline-flex items-center gap-1 text-xs font-medium text-[#3a5a9c] hover:text-[#1f2f52]"
+                        >
+                          <EyeOff className="size-4" aria-hidden="true" />
+                          隠す
+                        </button>
+                        <p className="pt-7 text-base leading-loose">{DEMO_SENTENCE}</p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setMemorizeRevealed(true)}
+                        className="flex min-h-[110px] w-full items-center justify-center gap-2 rounded-lg text-sm font-medium text-[#3a5a9c] ring-1 ring-[#cdd9ef] transition-shadow hover:shadow-sm"
+                      >
+                        <Eye className="size-4" aria-hidden="true" />
+                        タップで表示
+                      </button>
+                    )
                   )}
                   {mode === "cloze" && (
                     <p className="text-base leading-loose">
@@ -146,12 +176,25 @@ export function LandingScreen() {
                       ))}
                     </ul>
                   )}
-                  <p className="mt-3 flex items-center gap-1 text-xs text-[#3a5a9c]">
-                    <BookOpen className="size-[15px]" aria-hidden="true" />
-                    ワンタップで次の段落へ進めます
-                  </p>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* How it works */}
+          <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-10">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#3a5a9c]">How it works</span>
+            <h3 className="mt-1 text-xl font-bold">使い方はかんたん3ステップ</h3>
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {STEPS.map((step, i) => (
+                <div key={step.title} className="rounded-xl bg-[#eef2fa] p-4">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-[#1f2f52] text-sm font-bold text-white">
+                    {i + 1}
+                  </span>
+                  <h4 className="mt-3 font-bold">{step.title}</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-[#3a5a9c]">{step.description}</p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -162,10 +205,10 @@ export function LandingScreen() {
                 PROGRESS OVER PERFECTION
               </span>
               <h2 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-[28px]">
-                覚えられない日があっても、前には進める。
+                何度も見返すだけで、覚えられる。
               </h2>
               <p className="mt-3 leading-relaxed text-[#3a5a9c]">
-                「暗記した」と自分で思えたときだけ、次に進む。誰かと比べる必要はない、自分のペースの暗記ノート。
+                貼り付けて、あとは自分のペースで繰り返すだけ。完璧を目指さなくても、少しずつ確実に身についていきます。
               </p>
 
               <div className="mt-8 grid w-full grid-cols-3 gap-2 border-t border-[#c4d2ea] pt-6">
@@ -184,9 +227,7 @@ export function LandingScreen() {
 
           {/* Features */}
           <section>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#3a5a9c]">Features</span>
-            <h3 className="mt-1 text-xl font-bold">集中を途切れさせない、3つの安心設計</h3>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {FEATURES.map((f) => (
                 <div key={f.title} className="rounded-2xl bg-white p-5 shadow-sm">
                   <div

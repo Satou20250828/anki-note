@@ -11,6 +11,18 @@ describe("LandingScreen", () => {
     expect(ctaLinks[0]).toHaveAttribute("href", "/app");
   });
 
+  it("デモの暗記モードで「隠す」を押すと本文が隠れ、「タップで表示」で再表示される", () => {
+    render(<LandingScreen />);
+    expect(screen.getByText("長文暗記のコツは、全体をざっくり理解すること。そして、覚えた実感を少しずつ積み重ねていくことです。")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /隠す/ }));
+    expect(screen.queryByText("長文暗記のコツは、全体をざっくり理解すること。そして、覚えた実感を少しずつ積み重ねていくことです。")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /タップで表示/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /タップで表示/ }));
+    expect(screen.getByText("長文暗記のコツは、全体をざっくり理解すること。そして、覚えた実感を少しずつ積み重ねていくことです。")).toBeInTheDocument();
+  });
+
   it("デモの穴埋めモードに切り替えると、キーワードがタップ可能な空欄になり、タップで答えが表示される", () => {
     render(<LandingScreen />);
     fireEvent.click(screen.getByRole("button", { name: "穴埋めモード" }));
