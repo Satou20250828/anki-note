@@ -35,7 +35,7 @@ export function PracticeHeader({ title, favorite, onToggleFavorite, onRename }: 
     <header className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <Link
-          href="/"
+          href="/app"
           className="inline-flex items-center gap-1.5 rounded-md px-1 py-1 text-sm font-medium text-[#3a5a9c] transition-colors hover:text-[#1f2f52] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3a5a9c]"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
