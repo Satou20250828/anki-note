@@ -45,7 +45,7 @@ export function PracticeScreen({ textId }: { textId: string }) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#e7edf7] px-4 py-6 text-[#1f2f52]">
         <p>テキストが見つかりませんでした。</p>
-        <Link href="/" className="font-medium text-[#3a5a9c] underline">
+        <Link href="/app" className="font-medium text-[#3a5a9c] underline">
           ホームに戻る
         </Link>
       </main>
