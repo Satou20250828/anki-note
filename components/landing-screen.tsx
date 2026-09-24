@@ -63,7 +63,10 @@ export function LandingScreen() {
           <div className="flex size-8 items-center justify-center rounded-lg bg-[#1f2f52]">
             <BookOpen className="size-[18px] text-white" aria-hidden="true" />
           </div>
-          <span className="text-base font-bold tracking-wide">暗記ノート</span>
+          <span className="flex items-baseline gap-2">
+            <span className="text-base font-bold tracking-wide">暗記ノート</span>
+            <span className="text-xs text-[#3a5a9c]">長文暗記用アプリ</span>
+          </span>
         </header>
 
         <div className="flex flex-col gap-6 sm:gap-10">
