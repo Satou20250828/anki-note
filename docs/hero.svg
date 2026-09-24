@@ -1,0 +1,67 @@
+<svg viewBox="0 0 1500 1000" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1500" height="1000" fill="#e7edf7"/>
+
+  <!-- Logo mark -->
+  <rect x="100" y="90" width="88" height="88" rx="22" fill="#1f2f52"/>
+  <path d="M124 116 C135 110 149 110 160 116 L160 156 C149 150 135 150 124 156 Z" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M160 116 C171 110 185 110 196 116 L196 156 C185 150 171 150 160 156 Z" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- App name -->
+  <text x="212" y="145" font-family="sans-serif" font-size="52" font-weight="700" fill="#1f2f52">暗記ノート</text>
+  <text x="215" y="182" font-family="sans-serif" font-size="22" fill="#3a5a9c">長文暗記用アプリ</text>
+
+  <!-- Tagline -->
+  <text x="100" y="340" font-family="sans-serif" font-size="72" font-weight="700" fill="#1f2f52">長い文章を、</text>
+  <text x="100" y="425" font-family="sans-serif" font-size="72" font-weight="700" fill="#1f2f52">少しずつ、確実に。</text>
+  <text x="100" y="480" font-family="sans-serif" font-size="26" fill="#3a5a9c">貼り付けて、隠して、思い出す。それだけで覚えられる。</text>
+
+  <!-- Mode badges -->
+  <g font-family="sans-serif" font-size="24" font-weight="600">
+    <rect x="100" y="530" width="130" height="58" rx="29" fill="#d5e0f2"/>
+    <text x="132" y="568" fill="#1f2f52">暗記</text>
+
+    <rect x="246" y="530" width="160" height="58" rx="29" fill="#dcf0e6"/>
+    <text x="278" y="568" fill="#1f6b46">穴埋め</text>
+
+    <rect x="422" y="530" width="200" height="58" rx="29" fill="#e4e7ee"/>
+    <text x="454" y="568" fill="#4a5470">キーワード</text>
+  </g>
+
+  <!-- Illustration: stacked cards showing hidden -> in progress -> mastered -->
+  <g transform="translate(1020,700) rotate(-7)">
+    <rect x="-260" y="-155" width="520" height="280" rx="26" fill="#ffffff" stroke="#c4d2ea" stroke-width="2"/>
+    <rect x="-218" y="-101" width="290" height="22" rx="11" fill="#e7edf7" stroke="#9aa9c6" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="-218" y="-55" width="370" height="22" rx="11" fill="#e7edf7" stroke="#9aa9c6" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="-218" y="-9" width="240" height="22" rx="11" fill="#e7edf7" stroke="#9aa9c6" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="-218" y="37" width="320" height="22" rx="11" fill="#e7edf7" stroke="#9aa9c6" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="-218" y="83" width="190" height="32" rx="10" fill="#9aa9c6"/>
+    <text x="-200" y="105" font-family="sans-serif" font-size="19" font-weight="600" fill="#ffffff">未着手</text>
+  </g>
+
+  <g transform="translate(1120,725) rotate(4)">
+    <rect x="-260" y="-155" width="520" height="280" rx="26" fill="#ffffff" stroke="#c4d2ea" stroke-width="2"/>
+    <rect x="-218" y="-101" width="130" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-76" y="-101" width="145" height="22" rx="11" fill="#e7edf7" stroke="#3a5a9c" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="-218" y="-55" width="195" height="22" rx="11" fill="#e7edf7" stroke="#3a5a9c" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="-11" y="-55" width="160" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-218" y="-9" width="370" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-218" y="37" width="100" height="22" rx="11" fill="#e7edf7" stroke="#3a5a9c" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="-106" y="37" width="225" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-218" y="83" width="210" height="32" rx="10" fill="#3a5a9c"/>
+    <text x="-200" y="105" font-family="sans-serif" font-size="19" font-weight="600" fill="#ffffff">暗記中</text>
+    <circle cx="210" cy="-113" r="26" fill="#3a5a9c"/>
+    <path d="M199 -113 L207 -104 L223 -124" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(1215,758) rotate(-2)">
+    <rect x="-260" y="-155" width="520" height="280" rx="26" fill="#ffffff" stroke="#c4d2ea" stroke-width="2"/>
+    <rect x="-218" y="-101" width="370" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-218" y="-55" width="320" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-218" y="-9" width="385" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-218" y="37" width="260" height="22" rx="11" fill="#1f2f52"/>
+    <rect x="-218" y="83" width="230" height="32" rx="10" fill="#2e9e6b"/>
+    <text x="-200" y="105" font-family="sans-serif" font-size="19" font-weight="600" fill="#ffffff">習得済み</text>
+    <circle cx="210" cy="-113" r="29" fill="#2e9e6b"/>
+    <path d="M197 -113 L207 -102 L226 -128" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
