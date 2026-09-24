@@ -10,6 +10,7 @@
 ---
 
 - **サービスURL:** https://anki-note.vercel.app/
+- **Qiita記事:** （準備中）
 
 ---
 
