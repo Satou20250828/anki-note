@@ -239,6 +239,34 @@ describe("HomeScreen", () => {
     expect(screen.queryByText("面接原稿")).not.toBeInTheDocument();
   });
 
+  it("フォルダを削除すると、中にあったテキストは未分類に戻る", () => {
+    saveFolders([{ id: "f1", name: "面接用" }]);
+    saveTexts([
+      {
+        id: "t1",
+        title: "面接原稿",
+        rawText: "一文目。",
+        folderId: "f1",
+        bookmarked: false,
+        blockCount: 1,
+        chunks: [{ sentences: [{ text: "一文目。", revealed: true, hinted: false, kwRevealed: false }] }],
+        status: "new",
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ]);
+    render(<HomeScreen />);
+    fireEvent.click(screen.getByLabelText("メニューを開く"));
+    fireEvent.click(screen.getByLabelText("面接用を削除"));
+
+    expect(loadFolders()).toEqual([]);
+    expect(loadTexts()[0].folderId).toBeNull();
+
+    fireEvent.click(screen.getByRole("radio", { name: "未分類" }));
+    fireEvent.click(screen.getByText(/保存済みテキスト/));
+    expect(screen.getByText("面接原稿")).toBeInTheDocument();
+  });
+
   it("保存済み一覧には習得状況のバッジが表示される", () => {
     saveTexts([
       {

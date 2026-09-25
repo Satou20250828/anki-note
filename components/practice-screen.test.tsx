@@ -125,7 +125,7 @@ describe("PracticeScreen", () => {
   it("ブックマークを切り替えるとlocalStorageに反映される", () => {
     saveTexts([makeText()]);
     render(<PracticeScreen textId="t1" />);
-    fireEvent.click(screen.getByLabelText("お気に入りに追加"));
+    fireEvent.click(screen.getByLabelText("ブックマークに追加"));
 
     const saved = loadTexts();
     expect(saved[0].bookmarked).toBe(true);
