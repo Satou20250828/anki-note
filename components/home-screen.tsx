@@ -74,6 +74,15 @@ export function HomeScreen() {
     saveFolders(next)
   }
 
+  // フォルダを消したら、中にあったテキストは未分類（folderId: null）に戻す
+  const handleDeleteFolder = (id: string) => {
+    handleFoldersChange(folders.filter((f) => f.id !== id))
+    const nextTexts = texts.map((t) => (t.folderId === id ? { ...t, folderId: null } : t))
+    setTexts(nextTexts)
+    saveTexts(nextTexts)
+    if (folderId === id) setFolderId("")
+  }
+
   const startCreatingFolder = () => {
     setCreatingFolder(true)
     setNewFolderName("")
@@ -329,6 +338,7 @@ export function HomeScreen() {
           setViewFolderId(id)
         }}
         onFoldersChange={handleFoldersChange}
+        onDeleteFolder={handleDeleteFolder}
       />
     </div>
   )

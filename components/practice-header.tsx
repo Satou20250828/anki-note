@@ -6,12 +6,12 @@ import { ArrowLeft, Star, Pencil, Check } from "lucide-react"
 
 type PracticeHeaderProps = {
   title: string
-  favorite: boolean
-  onToggleFavorite: () => void
+  bookmarked: boolean
+  onToggleBookmark: () => void
   onRename: (title: string) => void
 }
 
-export function PracticeHeader({ title, favorite, onToggleFavorite, onRename }: PracticeHeaderProps) {
+export function PracticeHeader({ title, bookmarked, onToggleBookmark, onRename }: PracticeHeaderProps) {
   const [editing, setEditing] = useState(false)
   const [draftTitle, setDraftTitle] = useState(title)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -45,12 +45,12 @@ export function PracticeHeader({ title, favorite, onToggleFavorite, onRename }: 
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={onToggleFavorite}
-            aria-pressed={favorite}
-            aria-label={favorite ? "お気に入りから外す" : "お気に入りに追加"}
+            onClick={onToggleBookmark}
+            aria-pressed={bookmarked}
+            aria-label={bookmarked ? "ブックマークから外す" : "ブックマークに追加"}
             className="inline-flex size-9 items-center justify-center rounded-full text-[#3a5a9c] transition-colors hover:bg-[#d5e0f2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3a5a9c]"
           >
-            <Star className={`size-5 ${favorite ? "fill-[#f2b705] text-[#f2b705]" : ""}`} aria-hidden="true" />
+            <Star className={`size-5 ${bookmarked ? "fill-[#f2b705] text-[#f2b705]" : ""}`} aria-hidden="true" />
           </button>
         </div>
       </div>

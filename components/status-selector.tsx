@@ -3,17 +3,18 @@
 import { ChevronDown } from "lucide-react"
 import type { ChunkStatus } from "@/lib/types"
 
-const STATUSES: { value: ChunkStatus; label: string; dot: string }[] = [
-  { value: "new", label: "未着手", dot: "#9aa9c6" },
-  { value: "learning", label: "暗記中", dot: "#3a5a9c" },
-  { value: "mastered", label: "習得済み", dot: "#2e9e6b" },
-]
-
 export const STATUS_LABEL: Record<ChunkStatus, string> = {
   new: "未着手",
   learning: "暗記中",
   mastered: "習得済み",
 }
+
+// 表示名はSTATUS_LABELの1か所だけに書き、ここでは並び順と色だけを持つ
+const STATUSES: { value: ChunkStatus; label: string; dot: string }[] = [
+  { value: "new", label: STATUS_LABEL.new, dot: "#9aa9c6" },
+  { value: "learning", label: STATUS_LABEL.learning, dot: "#3a5a9c" },
+  { value: "mastered", label: STATUS_LABEL.mastered, dot: "#2e9e6b" },
+]
 
 type StatusSelectorProps = {
   value: ChunkStatus

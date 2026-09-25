@@ -1,13 +1,13 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { BookOpen, ArrowRight, CheckCircle2, Quote, Eye, EyeOff, Smile, Zap, BookmarkPlus } from "lucide-react"
 import { extractKeywordSegments } from "@/lib/textProcessing"
+import { ClozeSentence } from "./cloze-sentence"
+import type { PracticeMode } from "./mode-tabs"
 
 const DEMO_SENTENCE = "長文暗記のコツは、全体をざっくり理解すること。そして、覚えた実感を少しずつ積み重ねていくことです。"
-
-type DemoMode = "memorize" | "cloze" | "keyword"
 
 const FEATURES: { icon: typeof Eye; iconBg: string; iconColor: string; title: string; description: string }[] = [
   {
@@ -46,15 +46,22 @@ const METRICS = [
 ]
 
 export function LandingScreen() {
-  const [mode, setMode] = useState<DemoMode>("memorize")
-  const [revealed, setRevealed] = useState<Record<number, boolean>>({})
+  const [mode, setMode] = useState<PracticeMode>("memorize")
   const [memorizeRevealed, setMemorizeRevealed] = useState(true)
 
   const segments = useMemo(() => extractKeywordSegments(DEMO_SENTENCE), [])
   const keywords = segments.filter((s) => s.isKeyword && s.text.trim())
 
-  const today = new Date()
-  const dateLabel = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}`
+  // LPはビルド時にHTMLを作るため、日付をその場で計算するとビルド日のまま固定され、
+  // ブラウザ側の日付とずれてハイドレーションエラーになる。マウント後に今日の日付を入れる
+  const [today, setToday] = useState<Date | null>(null)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setToday(new Date())
+  }, [])
+  const dateLabel = today
+    ? `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}`
+    : ""
 
   return (
     <main className="min-h-dvh bg-[#e7edf7] text-[#1f2f52]">
@@ -111,7 +118,7 @@ export function LandingScreen() {
               </div>
 
               <div className="rounded-2xl bg-[#dde6f5] p-4 shadow-sm">
-                <div className="flex flex-wrap items-center gap-1 rounded-lg bg-[#cddaf0] p-1">
+                <div className="flex flex-wrap items-center gap-1 rounded-lg bg-[#cddaf0] p-1" role="tablist" aria-label="デモのモード選択">
                   <DemoTab active={mode === "memorize"} onClick={() => setMode("memorize")}>
                     暗記モード
                   </DemoTab>
@@ -150,24 +157,7 @@ export function LandingScreen() {
                   )}
                   {mode === "cloze" && (
                     <p className="text-base leading-loose">
-                      {segments.map((seg, i) => {
-                        if (!seg.isKeyword || !seg.text.trim()) return <span key={i}>{seg.text}</span>
-                        const isRevealed = revealed[i]
-                        return (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => setRevealed((r) => ({ ...r, [i]: !r[i] }))}
-                            className={`mx-0.5 inline-flex min-w-8 items-center justify-center rounded-md px-1 align-baseline text-sm font-semibold transition-colors ${
-                              isRevealed
-                                ? "bg-[#d5e0f2] text-[#1f2f52]"
-                                : "bg-[#e7edf7] text-transparent ring-1 ring-dashed ring-[#3a5a9c]"
-                            }`}
-                          >
-                            {isRevealed ? seg.text : "　".repeat(seg.text.length)}
-                          </button>
-                        )
-                      })}
+                      <ClozeSentence text={DEMO_SENTENCE} size="sm" />
                     </p>
                   )}
                   {mode === "keyword" && (
@@ -269,7 +259,7 @@ export function LandingScreen() {
 
         <footer className="mt-8 flex items-center justify-between border-t border-[#c4d2ea] pt-4 text-xs text-[#8a97b8] sm:mt-12">
           <span>今日: {dateLabel}</span>
-          <span>© {today.getFullYear()} 暗記ノート</span>
+          <span>© {today?.getFullYear()} 暗記ノート</span>
         </footer>
       </div>
     </main>
@@ -280,6 +270,8 @@ function DemoTab({ active, onClick, children }: { active: boolean; onClick: () =
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
         active ? "bg-white text-[#1f2f52] shadow-sm" : "text-[#1f2f52]/70"
