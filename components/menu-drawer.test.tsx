@@ -19,6 +19,7 @@ function setup(overrides: Partial<React.ComponentProps<typeof MenuDrawer>> = {})
     selectedFolderId: null,
     onSelectFolder: vi.fn(),
     onFoldersChange: vi.fn(),
+    onDeleteFolder: vi.fn(),
     ...overrides,
   };
   render(<MenuDrawer {...props} />);
@@ -66,10 +67,16 @@ describe("MenuDrawer", () => {
     ]);
   });
 
-  it("削除アイコンをクリックするとそのフォルダが除かれる", () => {
+  it("削除アイコンをクリックするとonDeleteFolderがそのフォルダのIDで呼ばれる", () => {
     const props = setup();
     fireEvent.click(screen.getByLabelText("面接用を削除"));
-    expect(props.onFoldersChange).toHaveBeenCalledWith([folders[1]]);
+    expect(props.onDeleteFolder).toHaveBeenCalledWith("f1");
+  });
+
+  it("表示中のフォルダを削除すると「すべて」表示に戻る", () => {
+    const props = setup({ filter: "folder", selectedFolderId: "f1" });
+    fireEvent.click(screen.getByLabelText("面接用を削除"));
+    expect(props.onSelectAll).toHaveBeenCalled();
   });
 
   it("閉じるボタンでonCloseが呼ばれる", () => {

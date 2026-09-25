@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { LandingScreen } from "./landing-screen";
 
 describe("LandingScreen", () => {
@@ -25,7 +25,7 @@ describe("LandingScreen", () => {
 
   it("デモの穴埋めモードに切り替えると、キーワードがタップ可能な空欄になり、タップで答えが表示される", () => {
     render(<LandingScreen />);
-    fireEvent.click(screen.getByRole("button", { name: "穴埋めモード" }));
+    fireEvent.click(screen.getByRole("tab", { name: "穴埋めモード" }));
 
     const blanks = screen
       .getAllByRole("button")
@@ -38,8 +38,26 @@ describe("LandingScreen", () => {
 
   it("デモのキーワードモードに切り替えると、キーワードがチップ表示される", () => {
     render(<LandingScreen />);
-    fireEvent.click(screen.getByRole("button", { name: "キーワード抽出" }));
+    fireEvent.click(screen.getByRole("tab", { name: "キーワード抽出" }));
 
     expect(screen.getByText("長文暗記")).toBeInTheDocument();
+  });
+
+  it("デモのモード切り替えはタブとして選択状態が伝わる", () => {
+    render(<LandingScreen />);
+    expect(screen.getByRole("tab", { name: "暗記モード" })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: "穴埋めモード" }));
+    expect(screen.getByRole("tab", { name: "穴埋めモード" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "暗記モード" })).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("フッターには表示した日の日付が入る", async () => {
+    await act(async () => {
+      render(<LandingScreen />);
+    });
+    const d = new Date();
+    const expected = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+    expect(screen.getByText(`今日: ${expected}`)).toBeInTheDocument();
   });
 });

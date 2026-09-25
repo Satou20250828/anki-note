@@ -22,6 +22,7 @@ type MenuDrawerProps = {
   selectedFolderId: string | null
   onSelectFolder: (id: string | null) => void
   onFoldersChange: (folders: Folder[]) => void
+  onDeleteFolder: (id: string) => void
 }
 
 export function MenuDrawer({
@@ -34,6 +35,7 @@ export function MenuDrawer({
   selectedFolderId,
   onSelectFolder,
   onFoldersChange,
+  onDeleteFolder,
 }: MenuDrawerProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftName, setDraftName] = useState("")
@@ -73,7 +75,7 @@ export function MenuDrawer({
   }
 
   const deleteFolder = (id: string) => {
-    onFoldersChange(folders.filter((f) => f.id !== id))
+    onDeleteFolder(id)
     if (filter === "folder" && selectedFolderId === id) onSelectAll()
   }
 

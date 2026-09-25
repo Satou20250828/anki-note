@@ -54,7 +54,7 @@ export function PracticeScreen({ textId }: { textId: string }) {
 
   if (!text) return null
 
-  const toggleFavorite = () => updateText((t) => ({ ...t, bookmarked: !t.bookmarked, updatedAt: Date.now() }))
+  const toggleBookmark = () => updateText((t) => ({ ...t, bookmarked: !t.bookmarked, updatedAt: Date.now() }))
 
   const renameText = (title: string) => updateText((t) => ({ ...t, title, updatedAt: Date.now() }))
 
@@ -84,8 +84,8 @@ export function PracticeScreen({ textId }: { textId: string }) {
       <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6">
         <PracticeHeader
           title={text.title}
-          favorite={text.bookmarked}
-          onToggleFavorite={toggleFavorite}
+          bookmarked={text.bookmarked}
+          onToggleBookmark={toggleBookmark}
           onRename={renameText}
         />
 
